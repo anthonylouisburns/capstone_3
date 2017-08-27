@@ -52,10 +52,10 @@ object Visualization {
   }
 
   def visualize_proposed(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): Image = {
-    val locationPixel:RDD[(Location, Pixel)] = calculatePixels(temperatures, colors)
-    val pixels:RDD[Pixel] = locationPixel.map(x=>x._2)
-    val img_pixels:Array[Pixel] = pixels.collect()
-    Image(361,181,img_pixels)
+    val locationPixel: RDD[(Location, Pixel)] = calculatePixels(temperatures, colors)
+    val pixels: RDD[Pixel] = locationPixel.map(x => x._2)
+    val img_pixels: Array[Pixel] = pixels.collect()
+    Image(361, 181, img_pixels)
   }
 
   def calculatePixels(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): RDD[(Location, Pixel)] = {
@@ -69,39 +69,45 @@ object Visualization {
     val locations: RDD[Location] = points.map(x => Location(x._1, x._2))
 
     //locations with temp
-    val locations_x_temps: RDD[(Location, (Location, Double))] = locations.cartesian(temps)
-    val distAndTemps = locations_x_temps.map(e=>locationDistanceAndTemp(e._1,e._2))
-    val tempAndWeight: RDD[(Location, (Double, Double))] = distAndTemps.map(e => locationTempWeight(e._1,e._2))
-    val weightedTempAndWeight: RDD[(Location, (Double, Double))] = tempAndWeight.map(e => locationWeightAndWeightedTemp(e._1,e._2))
+//    val locations_x_temps: RDD[(Location, (Location, Double))] = locations.cartesian(temps)
+//    val distAndTemps: RDD[(Location, (Double, Double))] = locations_x_temps.map(e => (e._1, locationDistanceAndTemp(e._1, e._2)))
+//    val tempAndWeight: RDD[(Location, (Double, Double))] = distAndTemps.map(e => (e._1, locationTempWeight(e._2)))
+//    val weightedTempAndWeight: RDD[(Location, (Double, Double))] = tempAndWeight.map(e => (e._1, locationWeightAndWeightedTemp( e._2)))
 
-    val locations_w_top_bottom:RDD[(Location, (Double, Double))] = weightedTempAndWeight.reduceByKey((a,b)=>(a._1+b._1, a._2+b._2))
-    val locations_w_temp:RDD[(Location, Double)] = locations_w_top_bottom.map(x=>(x._1,x._2._1/x._2._2))
-    val sorted_locations_w_temp:RDD[(Location, Double)] = locations_w_temp.sortBy(x=>(x._1.lat * -1000) + x._1.lon)
+    val weightedTempAndWeight = locations.cartesian(temps).map(e => from_location_and_temp_to_weighted_temp_and_weight(e))
 
-    val location_w_color:RDD[(Location, Color)]  = sorted_locations_w_temp.map(e=>(e._1, interpolateColor(colors, e._2)))
+    val locations_w_top_bottom: RDD[(Location, (Double, Double))] = weightedTempAndWeight.reduceByKey((a, b) => (a._1 + b._1, a._2 + b._2))
+    val locations_w_temp: RDD[(Location, Double)] = locations_w_top_bottom.map(x => (x._1, x._2._1 / x._2._2))
+    val sorted_locations_w_temp: RDD[(Location, Double)] = locations_w_temp.sortBy(x => (x._1.lat * -1000) + x._1.lon)
+    val location_w_color: RDD[(Location, Color)] = sorted_locations_w_temp.map(e => (e._1, interpolateColor(colors, e._2)))
 
-    location_w_color.map(x=>(x._1,Pixel(scrimage.Color(x._2.red,x._2.green,x._2.blue))))
+    location_w_color.map(x => (x._1, Pixel(scrimage.Color(x._2.red, x._2.green, x._2.blue))))
   }
 
-  def locationDistanceAndTemp(location: Location, locationTemp: (Location, Double)): (Location, (Double, Double)) = {
+  def from_location_and_temp_to_weighted_temp_and_weight(entry:(Location, (Location, Double))): (Location, (Double, Double)) = {
+    val location = entry._1
+    (location, locationWeightAndWeightedTemp(locationTempWeight(locationDistanceAndTemp(location, entry._2))))
+  }
+
+  def locationDistanceAndTemp(location:Location, locationTemp: (Location, Double)): (Double, Double) = {
     val l2 = locationTemp._1
     val t = locationTemp._2
 
-    (location, (distance(location)(l2), t))
+    (distance(location)(l2), t)
   }
 
-  def locationTempWeight(location: Location, distanceTemp: (Double, Double)): (Location, (Double, Double))={
+  def locationTempWeight(distanceTemp: (Double, Double)): (Double, Double) = {
     val distance = distanceTemp._1
     val t = distanceTemp._2
 
-    (location, (t, weight(distance)))
+    (t, weight(distance))
   }
 
-  def locationWeightAndWeightedTemp(location: Location, tempWeight: (Double, Double)): (Location, (Double, Double))={
+  def locationWeightAndWeightedTemp(tempWeight: (Double, Double)): (Double, Double) = {
     val t = tempWeight._1
     val weight = tempWeight._2
 
-    (location, (t*weight, weight))
+    (t * weight, weight)
   }
 
   //interpolateColor start
