@@ -48,6 +48,17 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): Image = {
+    ???
+  }
+
+  def visualize_proposed(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): Image = {
+    val locationPixel:RDD[(Location, Pixel)] = calculatePixels(temperatures, colors)
+    val pixels:RDD[Pixel] = locationPixel.map(x=>x._2)
+    val img_pixels:Array[Pixel] = pixels.collect()
+    Image(361,181,img_pixels)
+  }
+
+  def calculatePixels(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): RDD[(Location, Pixel)] = {
     val temps: RDD[(Location, Double)] = sc.parallelize(temperatures.toList)
     val colorsSorted: java.util.TreeMap[Double, Color] = sortedColors(colors)
 
@@ -62,16 +73,14 @@ object Visualization {
     val distAndTemps = locations_x_temps.map(e=>locationDistanceAndTemp(e._1,e._2))
     val tempAndWeight: RDD[(Location, (Double, Double))] = distAndTemps.map(e => locationTempWeight(e._1,e._2))
     val weightedTempAndWeight: RDD[(Location, (Double, Double))] = tempAndWeight.map(e => locationWeightAndWeightedTemp(e._1,e._2))
+
     val locations_w_top_bottom:RDD[(Location, (Double, Double))] = weightedTempAndWeight.reduceByKey((a,b)=>(a._1+b._1, a._2+b._2))
     val locations_w_temp:RDD[(Location, Double)] = locations_w_top_bottom.map(x=>(x._1,x._2._1/x._2._2))
     val sorted_locations_w_temp:RDD[(Location, Double)] = locations_w_temp.sortBy(x=>(x._1.lat * -1000) + x._1.lon)
 
     val location_w_color:RDD[(Location, Color)]  = sorted_locations_w_temp.map(e=>(e._1, interpolateColor(colors, e._2)))
 
-    val locationPixel:RDD[(Location, Pixel)] = location_w_color.map(x=>(x._1,Pixel(scrimage.Color(x._2.red,x._2.green,x._2.blue))))
-    val pixels:RDD[Pixel] = locationPixel.map(x=>x._2)
-    val img_pixels:Array[Pixel] = pixels.collect()
-    Image(361,181,img_pixels)
+    location_w_color.map(x=>(x._1,Pixel(scrimage.Color(x._2.red,x._2.green,x._2.blue))))
   }
 
   def locationDistanceAndTemp(location: Location, locationTemp: (Location, Double)): (Location, (Double, Double)) = {
@@ -132,8 +141,8 @@ object Visualization {
     val weightAndTemp: RDD[(Double, Double)] = distAndTemps.map(e => (weight(e._1), e._2))
     val weightAndWeightedTemp: RDD[(Double, Double)] = weightAndTemp.map(e => (e._1, e._1 * e._2))
 
-    val sumOfWeightedTemps = weightAndWeightedTemp.map(e => e._1).sum
-    val sumOfWeights = weightAndWeightedTemp.map(e => e._2).sum
+    val sumOfWeightedTemps = weightAndWeightedTemp.map(e => e._2).sum
+    val sumOfWeights = weightAndWeightedTemp.map(e => e._1).sum
     sumOfWeightedTemps / sumOfWeights
   }
 
