@@ -15,6 +15,7 @@ object Extraction {
   @transient lazy val sparkSession = SparkSession.builder.
     master("local")
     .appName("spark session example")
+    .config("spark.driver.memorysdfd", "100mb")
     .getOrCreate()
   Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
 
@@ -51,7 +52,9 @@ object Extraction {
     * @return A sequence containing, for each location, the average temperature over the year.
     */
   def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Double)]): Iterable[(Location, Double)] = {
+    println("locationYearlyAverageRecords")
     val rdd = sparkSession.sparkContext.parallelize(records.toList)
+    println("parallelized")
     rdd.map(r => (r._2, r._3))
       .filter(r => !Option(r._1).isEmpty && !Option(r._2).isEmpty)
       .aggregateByKey((0.0, 0))(
