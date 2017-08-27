@@ -53,7 +53,7 @@ object Extraction {
     */
   def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Double)]): Iterable[(Location, Double)] = {
     println("locationYearlyAverageRecords")
-    val rdd = sparkSession.sparkContext.parallelize(records.toList)
+    val rdd = sparkSession.sparkContext.parallelize(records.toList, numSlices=1000)
     println("parallelized")
     rdd.map(r => (r._2, r._3))
       .filter(r => !Option(r._1).isEmpty && !Option(r._2).isEmpty)

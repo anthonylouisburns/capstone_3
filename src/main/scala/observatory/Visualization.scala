@@ -29,6 +29,10 @@ object Visualization {
     */
   def predictTemperature(temperatures: Iterable[(Location, Double)], location: Location): Double = {
     //    val temps: RDD[(Location, Double)] = sc.parallelize(temperatures.toList)
+    if(location.equals(Location(0,0))) {
+      println(s"LOCATION ------------$location")
+      temperatures.foreach(println)
+    }
     predictTemperatureIterable(temperatures, location)
     //    ???
   }
@@ -39,6 +43,7 @@ object Visualization {
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
   def interpolateColor(colors: Iterable[(Double, Color)], value: Double): Color = {
+    colors.foreach(println)
     val colorsSorted: java.util.TreeMap[Double, Color] = sortedColors(colors)
     interpolateColor(colorsSorted, value)
   }
@@ -49,8 +54,8 @@ object Visualization {
     * @return A 360×180 image where each pixel shows the predicted temperature at its location
     */
   def visualize(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): Image = {
-    //    visualize_proposed(temperatures, colors)
-    ???
+        visualize_proposed(temperatures, colors)
+//    ???
   }
 
   def visualize_proposed(temperatures: Iterable[(Location, Double)], colors: Iterable[(Double, Color)]): Image = {
@@ -172,13 +177,17 @@ object Visualization {
 
   def predictTemperatureIterable(temperatures: Iterable[(Location, Double)], location: Location): Double = {
     val dist: (Location) => Double = distance(location)
-    val weightAndWeightedTemp: Iterable[(Double, Double)] = temperatures.map(e => (dist(e._1), e._2))
-      .map(e => (weight(e._1), e._2))
-      .map(e => (e._1, e._1 * e._2))
+    if(temperatures.filter(x=>x._1.equals(location)).nonEmpty) {
+      temperatures.filter(x=>x._1.equals(location)).head._2
+    }else {
+      val weightAndWeightedTemp: Iterable[(Double, Double)] = temperatures.map(e => (dist(e._1), e._2))
+        .map(e => (weight(e._1), e._2))
+        .map(e => (e._1, e._1 * e._2))
 
-    val sumOfWeightedTemps = weightAndWeightedTemp.map(e => e._2).sum
-    val sumOfWeights = weightAndWeightedTemp.map(e => e._1).sum
-    sumOfWeightedTemps / sumOfWeights
+      val sumOfWeightedTemps = weightAndWeightedTemp.map(e => e._2).sum
+      val sumOfWeights = weightAndWeightedTemp.map(e => e._1).sum
+      sumOfWeightedTemps / sumOfWeights
+    }
   }
 
   def distance(one: Location)(two: Location): Double = {

@@ -30,6 +30,22 @@ trait VisualizationTest extends FunSuite with Checkers {
     val t = VisualizationSimple.predictTemperature(temps, Location(0, 0))
     assert(t === 50)
   })
+
+  test("LOCATION ------------Location(0.0,0.0)\n(Location(0.0,0.0),10.0)")({
+    val l = Location(0.0,0.0)
+    val t = Iterable((Location(0.0,0.0),10.0))
+    val x = Visualization.predictTemperatureIterable(t, l)
+    assert(x === 10)
+  })
+
+  test("LOCATION ------------Location(0.0,0.0)\n(Location(45.0,-90.0),-1.0)\n(Location(-45.0,0.0),63.83800607901071)")({
+    val l = Location(0.0,0.0)
+    val t = Iterable((Location(45.0,-90.0),-1.0),
+      (Location(-45.0,0.0),63.83800607901071))
+    val x = Visualization.predictTemperatureIterable(t, l)
+    assert(x === 50.87040486320857)
+  })
+
 //
 //  test("0x0 dist to 89.0, 0.0")({
 //    assert(Visualization.distance(Location(0, 0))(Location(89.0, 0.0)) === 9907.439340630452)
