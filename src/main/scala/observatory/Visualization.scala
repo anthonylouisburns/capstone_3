@@ -29,10 +29,10 @@ object Visualization {
     */
   def predictTemperature(temperatures: Iterable[(Location, Double)], location: Location): Double = {
     //    val temps: RDD[(Location, Double)] = sc.parallelize(temperatures.toList)
-    if(location.equals(Location(0,0))) {
-      println(s"LOCATION ------------$location")
-      temperatures.foreach(println)
-    }
+//    if(location.equals(Location(0,0))) {
+//      println(s"LOCATION ------------$location")
+//      temperatures.foreach(println)
+//    }
     predictTemperatureIterable(temperatures, location)
     //    ???
   }
@@ -43,7 +43,7 @@ object Visualization {
     * @return The color that corresponds to `value`, according to the color scale defined by `points`
     */
   def interpolateColor(colors: Iterable[(Double, Color)], value: Double): Color = {
-    colors.foreach(println)
+//    colors.foreach(println)
     val colorsSorted: java.util.TreeMap[Double, Color] = sortedColors(colors)
     interpolateColor(colorsSorted, value)
   }
